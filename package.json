@@ -1,0 +1,26 @@
+{
+  "name": "pathfinding",
+  "version": "0.0.1",
+  "description": "A pathfinding algorithm implemented by A*.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gossypol/pathfinding.git"
+  },
+  "keywords": [
+    "algorithm",
+    "a*",
+    "A*",
+    "star",
+    "pathfinding"
+  ],
+  "author": "gossypol",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gossypol/pathfinding/issues"
+  },
+  "homepage": "https://github.com/gossypol/pathfinding#readme"
+}
