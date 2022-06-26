@@ -37,52 +37,185 @@ function createMap(points) {
   mapDom.innerHTML = mapContext;
 }
 
-// 获取两点间的曼哈顿距离
-function getDis(point1, point2) {
-  return Math.abs(point2.x - point1.x) + Math.abs(point2.y - point1.y ) - 1;
-}
-
 // 设置路径点颜色
 function setPointColor(pointId, color) {
   const pointDom = document.querySelector(`#item-${pointId}`);
   pointDom.style.backgroundColor = color;
 }
 
-// A* 寻路算法
-function findPathByAStar(start, end, points) {
-  const pathIds = [];
-  let openList = [start];
-  const closeList = [];
-
-  function searching() {
-    if (openList.length === 0) return;
-    const targetId = openList.map((openPoint) => {
-      return {
-        id: openPoint.id,
-        dis: getDis(openPoint, end),
-      }
-    }).sort((a, b) => a.dis - b.dis)[0].id;
-
-    const targetIndex = openList.findIndex((openPonit) => openPonit.id === targetId);
-    const target = openList.find((openPonit) => openPonit.id === targetId);
-
-    const aroundPoints = points.filter((point) => {
-      return (point.id === `${target.x}-${target.y - 1}` || 
-             point.id === `${target.x + 1}-${target.y}` || 
-             point.id === `${target.x}-${target.y + 1}` || 
-             point.id === `${target.x - 1}-${target.y}`) 
-             && point.type === 'r'
-             && !closeList.find((item) => item.id === point.id);
-    });
-    openList.splice(targetIndex, 1);
-    openList = [...openList, ...aroundPoints];
-    closeList.push(target);
-    if (target.id !== end.id) {
-      searching();
+function resetRoadColor(points) {
+  points.forEach((point) => {
+    if (point.type === 'r') {
+      setPointColor(point.id, NORMAL_COLOR);
     }
+  })
+}
+
+function getPath(list) {
+  const path = [];
+  let pathEnd = list[list.length - 1];
+  while (pathEnd) {
+    path.unshift(pathEnd);
+    pathEnd = pathEnd.parent;
+  }
+  return path;
+}
+
+// 获取两点间的曼哈顿距离
+function getManhattanDis(point1, point2) {
+  return Math.abs(point2.x - point1.x) + Math.abs(point2.y - point1.y) - 1;
+}
+
+// 获取当前点四周（上下左右）的点
+function getAroundPoints(current, points) {
+  return points.filter((point) => {
+    return (
+      point.id === `${current.x}-${current.y - 1}`
+      || point.id === `${current.x + 1}-${current.y}`
+      || point.id === `${current.x}-${current.y + 1}`
+      || point.id === `${current.x - 1}-${current.y}`)
+      && point.type === 'r';
+  });
+}
+
+// Breadth First Search 广度优先算法
+function searchingByBFS(start, end, points) {
+  const openList = []; // 需要检索的点的 list
+  const closeList = []; // 已经检索过的点的 list
+
+  start.parent = null; // 指向，用来确定最终路径
+  openList.push(start);
+
+  while (openList.length) {
+    const current = openList[0];
+
+    if (current.id === end.id) {
+      closeList.push(current);
+      break;
+    };
+
+    getAroundPoints(current, points).forEach((point) => {
+      if (
+        !closeList.find((closeItem) => closeItem.id === point.id)
+        && !openList.find((openItem) => openItem.id === point.id)
+      ) {
+        openList.push({
+          ...point,
+          parent: current,
+        })
+      }
+    });
+
+    // 把当前检索的点从 openList 添加到 closeList 中
+    const currentIndex = openList.findIndex((openItem) => openItem.id === current.id);
+    openList.splice(currentIndex, 1);
+    closeList.push(current);
   }
 
-  searching(openList);
+  if (!openList.length && !closeList.find((c) => c.id === end.id)) {
+    window.alert('该终点不可到达，请重新选择！');
+    return [];
+  }
+
+  return closeList;
+}
+
+// Dijkstra 算法
+function searchingByDijkstra(start, end, points) {
+  const openList = [];
+  const closeList = [];
+
+  start.cost = 0;
+  start.parent = null;
+  openList.push(start);
+  
+  while (openList.length) {
+    const current = openList.sort((a, b) => a.cost - b.cost)[0];
+    if (current.id === end.id) {
+      closeList.push(current);
+      break;
+    }
+
+    getAroundPoints(current, points).forEach((point) => {
+      if (!closeList.find((closeItem) => closeItem.id === point.id)) {
+      
+        const target = openList.find((openItem) => openItem.id === point.id);
+        if (!target) {
+          openList.push({
+            ...point,
+            cost: current.cost + 1,
+          })
+        } else if (target.cost > current.cost + 1) {
+          target.cost = current.cost + 1;
+        }
+      }
+    })
+
+    const currentIndex = openList.findIndex((openItem) => openItem.id === current.id);
+    openList.splice(currentIndex, 1);
+    closeList.push(current);
+  }
+
+  if (!openList.length && !closeList.find((c) => c.id === end.id)) {
+    window.alert('该终点不可到达，请重新选择！');
+    return [];
+  }
+
+  return closeList;
+}
+
+// A* 寻路算法 f(n) = g(n) + h(n)   由于存在评估函数，在有障碍物时路径不一定是最短
+function searchingByAStar(start, end, points) {
+  const openList = [];
+  const closeList = [];
+
+  start.g = 0;
+  start.h = getManhattanDis(end, start);
+  start.f = start.g + start.h;
+  start.parent = null;
+  openList.push(start);
+
+  while (openList.length) {
+    // 获取最小代价的点为当前需要检索的点
+    const current = openList.sort((a, b) => a.f - b.f)[0];
+
+    // 如果当前的点为终点则退出循环
+    if (current.id === end.id) {
+      closeList.push(current);
+      break;
+    };
+    
+    getAroundPoints(current, points).forEach((point) => {
+      if (!closeList.find((closeItem) => closeItem.id === point.id)) {
+
+        // 如果不在 openList 则加入，在的话根据代价大小更新代价及 parent
+        const target = openList.find((openItem) => openItem.id === point.id);
+        if (!target) {
+          openList.push({
+            ...point,
+            g: current.g + 1,
+            h: getManhattanDis(end, point),
+            f: current.g + 1 + getManhattanDis(end, point),
+            parent: current,
+          });
+        } else if (target.f > current.g + 1 + getManhattanDis(end, point)) {
+          target.g = current.g + 1;
+          target.h = getManhattanDis(end, point);
+          target.f = target.g + target.h;
+          target.parent = current;
+        }
+      }
+    });
+
+    const currentIndex = openList.findIndex((openItem) => openItem.id === current.id);
+    openList.splice(currentIndex, 1);
+    closeList.push(current);
+  }
+
+  if (!openList.length && !closeList.find((c) => c.id === end.id)) {
+    window.alert('该终点不可到达，请重新选择！');
+    return [];
+  }
 
   return closeList;
 }
@@ -92,10 +225,10 @@ function findPathByAStar(start, end, points) {
   let points = []; // 地图点的集合
   let start = null; // 起点
   let end = null; // 终点
-  let pathIds = []; // 路径点集合
   let isFinding = false; // 是否在寻路
 
   points = createPoints();
+  console.log(points.length)
   createMap(points);
 
   const resetBtn = document.querySelector('#reset-map');
@@ -112,7 +245,7 @@ function findPathByAStar(start, end, points) {
   const mapDom = document.querySelector('#map');
   mapDom.addEventListener('click', (e) => {
     const { dataset } = e.target;
-    console.log(dataset)
+
     if (isFinding || dataset.type === 'o') return;
 
     if (!start && !end) {
@@ -121,17 +254,32 @@ function findPathByAStar(start, end, points) {
     } else if (start && !end) {
       end = { id: dataset.id, x: Number(dataset.x), y: Number(dataset.y) };
       setPointColor(end.id, ACTIVE_COLOR);
-      // isFinding = true;
-      const path = findPathByAStar(start, end, points);
-      path.forEach((item) => {
-        setPointColor(item.id, ACTIVE_COLOR);
-      });
+
+      isFinding = true;
+
+      // const searched = searchingByBFS(start, end, points);
+      // const searched = searchingByDijkstra(start, end, points);
+      const searched = searchingByAStar(start, end, points);
+
+      // const path = searched;
+      const path = getPath(searched);
+
+      if (!path.length) {
+        isFinding = false;
+      } else {
+        let index = 0;
+        const timer = setInterval(() => {
+          if (index < path.length - 1) {
+            setPointColor(path[index].id, ACTIVE_COLOR);
+            index += 1;
+          } else {
+            isFinding = false;
+            clearInterval(timer);
+          }
+        }, 20);
+      }
     } else if (start && end) {
-      points.forEach((item) => {
-        if (item.type === 'r') {
-          setPointColor(item.id, NORMAL_COLOR);
-        }
-      })
+      resetRoadColor(points);
 
       start = { id: dataset.id, x: Number(dataset.x), y: Number(dataset.y) };
       setPointColor(start.id, ACTIVE_COLOR);
