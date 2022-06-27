@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A* 寻路算法</title>
+  <title>寻路算法</title>
   <link rel="stylesheet" href="./index.css">
 </head>
 
@@ -16,6 +16,25 @@
     </div>
     <div class="tools">
       <button id="reset-map">重新生成地图</button>
+    </div>
+
+    <div class="color">
+      <div class="color__item">
+        <span class="value start"></span>
+        <span class="name">起点</span>
+      </div>
+      <div class="color__item">
+        <span class="value end"></span>
+        <span class="name">终点</span>
+      </div>
+      <div class="color__item">
+        <span class="value searched"></span>
+        <span class="name">寻找过的点</span>
+      </div>
+      <div class="color__item">
+        <span class="value road"></span>
+        <span class="name">路径</span>
+      </div>
     </div>
   </div>
 

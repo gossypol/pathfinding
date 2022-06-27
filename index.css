@@ -9,6 +9,7 @@
   height: 100vh;
   min-width: 1200px;
   padding: 10px;
+  position: relative;
 }
 
 .map {
@@ -53,4 +54,49 @@
   color: #FFFFFF;
   border-radius: 4px;
   -webkit-appearance: none;
+}
+
+.color {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #333333;
+  line-height: 32px;
+}
+
+.color__item {
+  display: flex;
+  align-items: center;
+}
+
+.color__item .value {
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin-right: 10px;
+}
+
+.color__item .start {
+  background-color: #4A81FE;
+}
+
+.color__item .end {
+  background-color: #E6AD17;
+}
+
+.color__item .searched {
+  background-color: #ADD9C3;
+}
+
+.color__item .road {
+  background-color: #00994C;
+}
+
+.right-tools {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
 }

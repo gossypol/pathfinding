@@ -1,5 +1,8 @@
 
-const ACTIVE_COLOR = '#19BE6B';
+const START_COLOR = '#4A81FE';
+const END_COLOR = '#E6AD17';
+const SEARCH_COLOR = '#ADD9C3';
+const ROAD_COLOR = '#00994C';
 const NORMAL_COLOR = '#E1E3E6';
 
 // 创建点集合
@@ -46,7 +49,27 @@ function setPointColor(pointId, color) {
 function resetRoadColor(points) {
   points.forEach((point) => {
     if (point.type === 'r') {
+      console.log(point)
       setPointColor(point.id, NORMAL_COLOR);
+    }
+  })
+}
+
+function setListColorAnimate(list, color, delay) {
+  return new Promise((resolve, reject) => {
+    if (!list) {
+      reject()
+    } else {
+      let index = 0;
+      const timer = setInterval(() => {
+        if (index < list.length) {
+          setPointColor(list[index].id, color);
+          index += 1;
+        } else {
+          clearInterval(timer);
+          resolve();
+        }
+      }, delay);
     }
   })
 }
@@ -128,7 +151,7 @@ function searchingByDijkstra(start, end, points) {
   start.cost = 0;
   start.parent = null;
   openList.push(start);
-  
+
   while (openList.length) {
     const current = openList.sort((a, b) => a.cost - b.cost)[0];
     if (current.id === end.id) {
@@ -138,15 +161,61 @@ function searchingByDijkstra(start, end, points) {
 
     getAroundPoints(current, points).forEach((point) => {
       if (!closeList.find((closeItem) => closeItem.id === point.id)) {
-      
+
         const target = openList.find((openItem) => openItem.id === point.id);
         if (!target) {
           openList.push({
             ...point,
             cost: current.cost + 1,
+            parent: current,
           })
         } else if (target.cost > current.cost + 1) {
           target.cost = current.cost + 1;
+        }
+      }
+    })
+
+    const currentIndex = openList.findIndex((openItem) => openItem.id === current.id);
+    openList.splice(currentIndex, 1);
+    closeList.push(current);
+  }
+
+  if (!openList.length && !closeList.find((c) => c.id === end.id)) {
+    window.alert('该终点不可到达，请重新选择！');
+    return [];
+  }
+
+  return closeList;
+}
+
+// greedy 贪婪算法
+function searchingByGreedy(start, end, points) {
+  const openList = [];
+  const closeList = [];
+
+  start.cost = getManhattanDis(end, start);
+  start.parent = null;
+  openList.push(start);
+
+  while (openList.length) {
+    const current = openList.sort((a, b) => a.cost - b.cost)[0];
+
+    // 如果当前的点为终点则退出循环
+    if (current.id === end.id) {
+      closeList.push(current);
+      break;
+    };
+
+    getAroundPoints(current, points).forEach((point) => {
+
+      if (!closeList.find((closeItem) => closeItem.id === point.id)) {
+        const target = openList.find((openItem) => openItem.id === point.id);
+        if (!target) {
+          openList.push({
+            ...point,
+            cost: getManhattanDis(point, end),
+            parent: current,
+          });
         }
       }
     })
@@ -184,7 +253,7 @@ function searchingByAStar(start, end, points) {
       closeList.push(current);
       break;
     };
-    
+
     getAroundPoints(current, points).forEach((point) => {
       if (!closeList.find((closeItem) => closeItem.id === point.id)) {
 
@@ -228,7 +297,6 @@ function searchingByAStar(start, end, points) {
   let isFinding = false; // 是否在寻路
 
   points = createPoints();
-  console.log(points.length)
   createMap(points);
 
   const resetBtn = document.querySelector('#reset-map');
@@ -243,46 +311,38 @@ function searchingByAStar(start, end, points) {
   });
 
   const mapDom = document.querySelector('#map');
-  mapDom.addEventListener('click', (e) => {
+  mapDom.addEventListener('click', async (e) => {
     const { dataset } = e.target;
 
     if (isFinding || dataset.type === 'o') return;
 
     if (!start && !end) {
       start = { id: dataset.id, x: Number(dataset.x), y: Number(dataset.y) };
-      setPointColor(start.id, ACTIVE_COLOR)
+      setPointColor(start.id, START_COLOR)
     } else if (start && !end) {
       end = { id: dataset.id, x: Number(dataset.x), y: Number(dataset.y) };
-      setPointColor(end.id, ACTIVE_COLOR);
+      setPointColor(end.id, END_COLOR);
 
       isFinding = true;
 
       // const searched = searchingByBFS(start, end, points);
       // const searched = searchingByDijkstra(start, end, points);
+      // const searched = searchingByGreedy(start, end, points);
       const searched = searchingByAStar(start, end, points);
 
-      // const path = searched;
-      const path = getPath(searched);
-
-      if (!path.length) {
+      if (!searched.length) {
         isFinding = false;
       } else {
-        let index = 0;
-        const timer = setInterval(() => {
-          if (index < path.length - 1) {
-            setPointColor(path[index].id, ACTIVE_COLOR);
-            index += 1;
-          } else {
-            isFinding = false;
-            clearInterval(timer);
-          }
-        }, 20);
+        await setListColorAnimate(searched.filter((item) => item.id !== start.id && item.id !== end.id), SEARCH_COLOR, 10);
+        const path = getPath(searched);
+        await setListColorAnimate(path.filter((item) => item.id !== start.id && item.id !== end.id), ROAD_COLOR, 20);
+        isFinding = false;
       }
     } else if (start && end) {
       resetRoadColor(points);
 
       start = { id: dataset.id, x: Number(dataset.x), y: Number(dataset.y) };
-      setPointColor(start.id, ACTIVE_COLOR);
+      setPointColor(start.id, START_COLOR);
       end = null;
     }
   })
