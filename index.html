@@ -11,6 +11,32 @@
 
 <body>
   <div class="container">
+    <div class="header">
+      <div class="header__item">
+        算法：
+        <label for="breadth">
+          <input class="algorithm" type="radio" name="radio1" id="breadth">广度优先算法
+        </label>
+        <label for="dijkstra">
+          <input class="algorithm" type="radio" name="radio1" id="dijkstra">Dijkstra算法
+        </label>
+        <label for="greedy">
+          <input class="algorithm" type="radio" name="radio1" id="greedy">贪婪算法
+        </label>
+        <label for="astar">
+          <input checked class="algorithm" type="radio" name="radio1" id="astar">A Star算法
+        </label>
+      </div>
+      <div class="header__item">
+        是否显示搜索过程：
+        <label for="yes">
+          <input checked class="search-step" type="radio" name="radio2" id="yes">是
+        </label>
+        <label for="no">
+          <input class="search-step" type="radio" name="radio2" id="no">否
+        </label>
+      </div>
+    </div>
     <div id="map" class="map">
       <div class="map__item"></div>
     </div>

@@ -14,8 +14,7 @@ function createPoints() {
     }
   }
   points.forEach((point) => {
-    // o 障碍物
-    // r 路径
+    // o 障碍物   r 路径
     point.type = Math.random() > 0.22 ? 'r' : 'o';
   })
   return points;
@@ -49,7 +48,6 @@ function setPointColor(pointId, color) {
 function resetRoadColor(points) {
   points.forEach((point) => {
     if (point.type === 'r') {
-      console.log(point)
       setPointColor(point.id, NORMAL_COLOR);
     }
   })
@@ -296,6 +294,9 @@ function searchingByAStar(start, end, points) {
   let end = null; // 终点
   let isFinding = false; // 是否在寻路
 
+  let currentAlgorithm = 'astar';
+  let showStep = 'yes';
+
   points = createPoints();
   createMap(points);
 
@@ -325,15 +326,28 @@ function searchingByAStar(start, end, points) {
 
       isFinding = true;
 
-      // const searched = searchingByBFS(start, end, points);
-      // const searched = searchingByDijkstra(start, end, points);
-      // const searched = searchingByGreedy(start, end, points);
-      const searched = searchingByAStar(start, end, points);
+      let searched = null;
+      switch (currentAlgorithm) {
+        case 'breadth':
+          searched = searchingByBFS(start, end, points);
+          break;
+        case 'dijkstra':
+          searched = searchingByDijkstra(start, end, points);
+          break;
+        case 'greedy':
+          searched = searchingByGreedy(start, end, points);
+          break;
+        default:
+          searched = searchingByAStar(start, end, points);
+          break;
+      }
 
       if (!searched.length) {
         isFinding = false;
       } else {
-        await setListColorAnimate(searched.filter((item) => item.id !== start.id && item.id !== end.id), SEARCH_COLOR, 10);
+        if (showStep === 'yes') {
+          await setListColorAnimate(searched.filter((item) => item.id !== start.id && item.id !== end.id), SEARCH_COLOR, 10);
+        }
         const path = getPath(searched);
         await setListColorAnimate(path.filter((item) => item.id !== start.id && item.id !== end.id), ROAD_COLOR, 20);
         isFinding = false;
@@ -345,5 +359,17 @@ function searchingByAStar(start, end, points) {
       setPointColor(start.id, START_COLOR);
       end = null;
     }
+  })
+
+  document.querySelectorAll('.algorithm').forEach((dom) => {
+    dom.addEventListener('change', () => {
+      currentAlgorithm = dom.id;
+    })
+  })
+
+  document.querySelectorAll('.search-step').forEach((dom) => {
+    dom.addEventListener('change', () => {
+      showStep = dom.id;
+    })
   })
 })()
